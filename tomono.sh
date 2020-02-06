@@ -128,9 +128,18 @@ function create-mono {
 				git rm -rfq --ignore-unmatch .
 				git commit -q --allow-empty -m "Root commit for $branch branch"
 			fi
-			git merge -q --no-commit -s ours "$name/$branch" --allow-unrelated-histories
-			git read-tree --prefix="$folder/" "$name/$branch"
+			git checkout -q $name/$branch
+			../monorepo-tools/rewrite_history_into.sh $name
+			git switch -q -c temp-munge-branch
+			git checkout -q master
+			git checkout -q .
+			git reset -q --hard
+			git merge -q --no-commit temp-munge-branch --allow-unrelated-histories
 			git commit -q --no-verify --allow-empty -m "Merging $name to $branch"
+			git checkout -q .
+			git reset -q --hard
+			../monorepo-tools/original_refs_wipe.sh
+			git branch -D temp-munge-branch
 		done
 	done
 
