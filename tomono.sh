@@ -131,7 +131,7 @@ function create-mono {
 			git checkout -q $name/$branch
 			../monorepo-tools/rewrite_history_into.sh $name
 			git switch -q -c temp-munge-branch
-			git checkout -q master
+			git checkout -q $branch
 			git checkout -q .
 			git reset -q --hard
 			git merge -q --no-commit temp-munge-branch --allow-unrelated-histories
