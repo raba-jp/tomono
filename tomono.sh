@@ -63,6 +63,33 @@ function remote-branches {
 	popd
 }
 
+function git-is-merged {
+  merge_destination_branch=$1
+  merge_source_branch=$2
+
+  merge_base=$(git merge-base $merge_destination_branch $merge_source_branch)
+  merge_source_current_commit=$(git rev-parse $merge_source_branch)
+  if [[ $merge_base == $merge_source_current_commit ]]
+  then
+    return 0
+  else
+    return 1
+  fi
+}
+
+function should-merge-branch {
+  branch_to_merge=$1
+
+	if [[ $branch_to_merge == *"feature"* ]]
+	then 
+		return $(git-is-merged develop $branch_to_merge) 
+	else
+		return $(git-is-merged master $branch_to_merge) && $(git-is-merged develop $branch_to_merge)
+	fi
+}
+
+
+
 # Create a monorepository in a directory "core". Read repositories from STDIN:
 # one line per repository, with two space separated values:
 #
@@ -116,30 +143,31 @@ function create-mono {
 		# Merge every branch from the sub repo into the mono repo, into a
 		# branch of the same name (create one if it doesn't exist).
 		remote-branches "$name" | while read branch; do
-			if git rev-parse -q --verify "$branch"; then
-				# Branch already exists, just check it out (and clean up the working dir)
-				git checkout -q "$branch"
-				git checkout -q -- .
-				git clean -f -d
-			else
-				# Create a fresh branch with an empty root commit"
-				git checkout -q --orphan "$branch"
-				# The ignore unmatch is necessary when this was a fresh repo
-				git rm -rfq --ignore-unmatch .
-				git commit -q --allow-empty -m "Root commit for $branch branch"
-			fi
-			git checkout -q $name/$branch
-			../monorepo-tools/rewrite_history_into.sh $name
-			git switch -q -c temp-munge-branch
-			git checkout -q $branch
-			git checkout -q .
-			git reset -q --hard
-			git merge -q --no-commit temp-munge-branch --allow-unrelated-histories
-			git commit -q --no-verify --allow-empty -m "Merging $name to $branch"
-			git checkout -q .
-			git reset -q --hard
-			../monorepo-tools/original_refs_wipe.sh
-			git branch -D temp-munge-branch
+		  if should-merge-branch "$name/$branch"; then
+				if git rev-parse -q --verify "$branch"; then
+					# Branch already exists, just check it out (and clean up the working dir)
+					git checkout -q "$branch"
+					git checkout -q -- .
+					git clean -f -d
+				else
+					# Create a fresh branch with an empty root commit"
+					git checkout -q --orphan "$branch"
+					# The ignore unmatch is necessary when this was a fresh repo
+					git rm -rfq --ignore-unmatch .
+					git commit -q --allow-empty -m "Root commit for $branch branch"
+				fi
+				git checkout -q $name/$branch
+				../monorepo-tools/rewrite_history_into.sh $name
+				git switch -q -c temp-munge-branch
+				git checkout -q $branch
+				git reset -q --hard
+				git merge -q --no-commit temp-munge-branch --allow-unrelated-histories
+				git commit -q --no-verify --allow-empty -m "Merging $name to $branch"
+				git checkout -q .
+				git reset -q --hard
+				../monorepo-tools/original_refs_wipe.sh
+				git branch -D temp-munge-branch
+			done
 		done
 	done
 
