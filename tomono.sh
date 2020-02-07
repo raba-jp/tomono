@@ -63,13 +63,13 @@ function remote-branches {
 	popd
 }
 
-function git-is-merged {
+function git-is-not-merged {
   merge_destination_branch=$1
   merge_source_branch=$2
 
   merge_base=$(git merge-base $merge_destination_branch $merge_source_branch)
   merge_source_current_commit=$(git rev-parse $merge_source_branch)
-  if [[ $merge_base == $merge_source_current_commit ]]
+  if [ $merge_base -eq $merge_source_current_commit ]
   then
     return 0
   else
@@ -80,11 +80,14 @@ function git-is-merged {
 function should-merge-branch {
   branch_to_merge=$1
 
-	if [[ $branch_to_merge == *"feature"* ]]
+	if [ $branch_to_merge -eq *"feature"* ]
 	then 
-		return $(git-is-merged develop $branch_to_merge) 
+		return $(git-is-not-merged develop $branch_to_merge)
+	elif [ $branch_to_merge -eq *"release"* ]
+	then
+		return 1 
 	else
-		return $(git-is-merged master $branch_to_merge) && $(git-is-merged develop $branch_to_merge)
+		return $(git-is-not-merged master $branch_to_merge) && $(git-is-not-merged develop $branch_to_merge)
 	fi
 }
 
@@ -167,7 +170,7 @@ function create-mono {
 				git reset -q --hard
 				../monorepo-tools/original_refs_wipe.sh
 				git branch -D temp-munge-branch
-			done
+			fi
 		done
 	done
 
