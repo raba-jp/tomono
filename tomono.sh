@@ -69,26 +69,34 @@ function git-is-not-merged {
 
   merge_base=$(git merge-base $merge_destination_branch $merge_source_branch)
   merge_source_current_commit=$(git rev-parse $merge_source_branch)
-  if [ $merge_base -eq $merge_source_current_commit ]
+  if [[ $merge_base == $merge_source_current_commit ]]
   then
-    return 0
-  else
     return 1
+  else
+    return 0
   fi
 }
 
 function should-merge-branch {
   branch_to_merge=$1
-
-	if [ $branch_to_merge -eq *"feature"* ]
-	then 
-		return $(git-is-not-merged develop $branch_to_merge)
-	elif [ $branch_to_merge -eq *"release"* ]
-	then
-		return 1 
-	else
-		return $(git-is-not-merged master $branch_to_merge) && $(git-is-not-merged develop $branch_to_merge)
-	fi
+  remote=$2
+  echo $branch_to_merge
+  echo $name
+        if [[ $branch_to_merge == *"feature"* ]]
+        then
+                return $(git-is-not-merged "$name/develop" $branch_to_merge)
+        elif [[ $branch_to_merge == *"release"* ]]
+        then
+                return 0
+        elif [[ $branch_to_merge == *"develop"* ]]
+        then
+                return 0
+        elif [[ $branch_to_merge == *"master"* ]]
+        then
+                return 0
+        else
+                return $(git-is-not-merged "$remote/master" $branch_to_merge) && $(git-is-not-merged "$remote/develop" $branch_to_merge)
+        fi
 }
 
 
@@ -146,7 +154,7 @@ function create-mono {
 		# Merge every branch from the sub repo into the mono repo, into a
 		# branch of the same name (create one if it doesn't exist).
 		remote-branches "$name" | while read branch; do
-		  if should-merge-branch "$name/$branch"; then
+		  should-merge-branch "$name/$branch" "$name"; then
 				if git rev-parse -q --verify "$branch"; then
 					# Branch already exists, just check it out (and clean up the working dir)
 					git checkout -q "$branch"
