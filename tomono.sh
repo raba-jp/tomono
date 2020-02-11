@@ -63,17 +63,21 @@ function remote-branches {
 	popd
 }
 
-function git-is-not-merged {
+function git-is-merged {
   merge_destination_branch=$1
   merge_source_branch=$2
 
   merge_base=$(git merge-base $merge_destination_branch $merge_source_branch)
   merge_source_current_commit=$(git rev-parse $merge_source_branch)
+
+
   if [[ $merge_base == $merge_source_current_commit ]]
   then
-    return 1
-  else
+          echo "base and source are the same"
     return 0
+  else
+          echo "base and source are different"
+    return 1
   fi
 }
 
@@ -84,18 +88,33 @@ function should-merge-branch {
   echo $name
         if [[ $branch_to_merge == *"feature"* ]]
         then
-                return $(git-is-not-merged "$name/develop" $branch_to_merge)
-        elif [[ $branch_to_merge == *"release"* ]]
-        then
-                return 0
+                if git-is-merged "$remote/develop" $branch_to_merge
+                then
+                        echo "feature merged don't need to merge to mono"
+                        return 1
+                else
+                        return 0
+                fi
         elif [[ $branch_to_merge == *"develop"* ]]
         then
+                echo "develop"
                 return 0
         elif [[ $branch_to_merge == *"master"* ]]
         then
+                echo "master"
                 return 0
         else
-                return $(git-is-not-merged "$remote/master" $branch_to_merge) && $(git-is-not-merged "$remote/develop" $branch_to_merge)
+                if git-is-merged "$remote/master" $branch_to_merge || git-is-merged "$remote/develop" $branch_to_merge
+                then
+                        echo "merged into master or develop don't merge"
+                        echo $(git merge-base "$remote/develop" $branch_to_merge)
+                        echo $(git merge-base "$remote/master" $branch_to_merge )
+                        echo $(git rev-parse $branch_to_merge)
+                        return 1
+                else
+                        echo "continue merge, it's not in master or develop branches"
+                        return 0
+                fi
         fi
 }
 
