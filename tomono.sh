@@ -216,7 +216,7 @@ function create-mono {
 					git clean -f -d
 					git switch -c temp-munge-branch
 					git filter-repo --force --path-rename :$name/ --refs temp-munge-branch
-					git tag $name/$tag $tag
+					git tag $name/$tag
 					git tag -d $tag
 					git checkout -q develop
 					git branch -D temp-munge-branch
