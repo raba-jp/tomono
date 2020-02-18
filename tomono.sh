@@ -211,8 +211,14 @@ function create-mono {
 				echo "didn't update $tag"
 				else
 					echo "updated $tag to $name/$tag"
+					git checkout -q $tag
+					git checkout -q -- .
+					git clean -f -d
+					git switch -c temp-munge-branch
+					git filter-repo --force --path-rename :$name/ --refs temp-munge-branch
 					git tag $name/$tag $tag
 					git tag -d $tag
+					git branch -D temp-munge-branch
 				fi
 		done
 
