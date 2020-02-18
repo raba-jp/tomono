@@ -165,15 +165,15 @@ function create-mono {
 		echo "Fetching $name.." >&2 
 		git fetch -q "$name" --tags
 
-		# Now we've got all tags in .git/refs/tags: put them away for a sec
-		if [[ -n "$(ls .git/refs/tags)" ]]; then
-			mv .git/refs/tags ".git/refs/namespaced-tags/$name"
-		fi
+		# # Now we've got all tags in .git/refs/tags: put them away for a sec
+		# if [[ -n "$(ls .git/refs/tags)" ]]; then
+		# 	mv .git/refs/tags ".git/refs/namespaced-tags/$name"
+		# fi
 
 		# Merge every branch from the sub repo into the mono repo, into a
 		# branch of the same name (create one if it doesn't exist).
 		remote-branches "$name" | while read branch; do
-		  should-merge-branch "$name/$branch" "$name"; then
+		  if should-merge-branch "$name/$branch" "$name"; then
 				if git rev-parse -q --verify "$branch"; then
 					# Branch already exists, just check it out (and clean up the working dir)
 					git checkout -q "$branch"
@@ -187,7 +187,7 @@ function create-mono {
 					git commit -q --allow-empty -m "Root commit for $branch branch"
 				fi
 				git checkout -q $name/$branch
-				../monorepo-tools/rewrite_history_into.sh $name
+				git filter-repo --force --path-rename :gsa/
 				git switch -q -c temp-munge-branch
 				git checkout -q $branch
 				git reset -q --hard
@@ -195,15 +195,28 @@ function create-mono {
 				git commit -q --no-verify --allow-empty -m "Merging $name to $branch"
 				git checkout -q .
 				git reset -q --hard
-				../monorepo-tools/original_refs_wipe.sh
 				git branch -D temp-munge-branch
 			fi
 		done
+
+		git tag --list | while read tag
+		do
+				echo $tag
+				if [[ $tag = */* ]]
+				do
+				echo "didn't update $tag"
+				else
+					echo "updated $tag to $name/$tag"
+					git tag $name/$tag $tag
+					git tag -d $tag
+				fi
+		done
+		
 	done
 
 	# Restore all namespaced tags
-	rm -rf .git/refs/tags
-	mv .git/refs/namespaced-tags .git/refs/tags
+	# rm -rf .git/refs/tags
+	# mv .git/refs/namespaced-tags .git/refs/tags
 
 	git checkout -q master
 	git checkout -q .
