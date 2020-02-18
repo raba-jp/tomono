@@ -203,7 +203,7 @@ function create-mono {
 		do
 				echo $tag
 				if [[ $tag = */* ]]
-				do
+				then
 				echo "didn't update $tag"
 				else
 					echo "updated $tag to $name/$tag"
@@ -211,7 +211,7 @@ function create-mono {
 					git tag -d $tag
 				fi
 		done
-		
+
 	done
 
 	# Restore all namespaced tags
