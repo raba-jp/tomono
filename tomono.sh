@@ -103,6 +103,10 @@ function should-merge-branch {
         then
                 echo "master"
                 return 0
+				elif [[ $branch_to_merge == *"release"* ]]
+        then
+                echo "release"
+                return 0
         else
                 if git-is-merged "$remote/master" $branch_to_merge || git-is-merged "$remote/develop" $branch_to_merge
                 then
