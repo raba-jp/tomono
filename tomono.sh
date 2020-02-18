@@ -187,7 +187,7 @@ function create-mono {
 					git commit -q --allow-empty -m "Root commit for $branch branch"
 				fi
 				git checkout -q $name/$branch
-				git filter-repo --force --path-rename :gsa/
+				git filter-repo --force --path-rename :$name/ --refs $name/$branch
 				git switch -q -c temp-munge-branch
 				git checkout -q $branch
 				git reset -q --hard
