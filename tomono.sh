@@ -177,6 +177,7 @@ function create-mono {
 		# Merge every branch from the sub repo into the mono repo, into a
 		# branch of the same name (create one if it doesn't exist).
 		remote-branches "$name" | while read branch; do
+			git filter-repo --force --path-rename :$name/ --refs $name/*
 		  if should-merge-branch "$name/$branch" "$name"; then
 				if git rev-parse -q --verify "$branch"; then
 					# Branch already exists, just check it out (and clean up the working dir)
@@ -192,7 +193,6 @@ function create-mono {
 				fi
 				git checkout -q $name/$branch
 				git switch -q -c temp-munge-branch
-				git filter-repo --force --path-rename :$name/ --refs temp-munge-branch
 				git checkout -q $branch
 				git reset -q --hard
 				git merge -q --no-commit temp-munge-branch --allow-unrelated-histories
