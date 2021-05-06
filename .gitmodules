@@ -1,0 +1,3 @@
+[submodule "monorepo-tools"]
+	path = monorepo-tools
+	url = git@github.com:shopsys/monorepo-tools.git
