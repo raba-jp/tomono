@@ -140,7 +140,7 @@ function create-mono {
                         git commit -q --no-verify --allow-empty -m "Merging $name to $branch"
                         git checkout -q .
                         git reset -q --hard
-                        $SCRIPT_DIR/original_refs_wipe.sh
+                        $SCRIPT_DIR/monorepo-tools/original_refs_wipe.sh
                         git branch -D temp-munge-branch
                 done
         done
